@@ -1,0 +1,22 @@
+# FP_PARA=/opt/ml/code/config/train-args.json
+# data=$(cat $FP_PARA | jq -r '.FP_DATA')
+# # yolo=$(cat $FP_PARA | jq -r '.FP_YOLO')
+# weight=$(cat $FP_PARA | jq -r '.FP_WEIGHT')
+# # hyp=$(cat $FP_PARA | jq -r '.FP_HYP')
+# img=$(cat $FP_PARA | jq -r '.IMG_SIZE')
+# batch=$(cat $FP_PARA | jq -r '.BATCH')
+# epochs=$(cat $FP_PARA | jq -r '.EPOCHS')
+# name=$(cat $FP_PARA | jq -r '.NAME')
+# echo 'data:'
+# echo $data
+# echo $yolo
+# echo $weight
+
+echo training
+ls /opt/ml/input/data/training
+echo valid
+ls /opt/ml/input/data/training/valid/
+
+
+python /opt/ml/code/yolov5/train.py --weights yolov5s.pt --img 640 --epochs 35 --batch-size 32 --data /opt/ml/code/config/data.yaml --name wildfire-model
+cp -r /opt/ml/code/yolov5/runs/train/wildfire-model /opt/ml/model/

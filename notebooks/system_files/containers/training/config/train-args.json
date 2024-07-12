@@ -1,0 +1,10 @@
+{
+   "FP_DATA": "/opt/ml/code/config/data.yaml",
+   # "FP_YOLO": "/opt/ml/input/train_data/config/yolov5s.yaml",
+   # "FP_HYP": "/opt/ml/input/train_data/config/hyp.finetune.yaml",    
+   "FP_WEIGHT": "yolov5s.pt",
+   "NAME": "wildfire-detector-model",
+   "IMG_SIZE": "640",
+   "EPOCHS": "35",
+   "BATCH": "32"
+}

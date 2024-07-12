@@ -1,3 +1,6 @@
 [submodule "infrastructure/system_files/inference/lambda-opencv"]
 	path = infrastructure/system_files/inference/lambda-opencv
 	url = https://github.com/awslabs/lambda-opencv.git
+[submodule "notebooks/yolov5/yolov5"]
+	path = notebooks/yolov5/yolov5
+	url = https://github.com/ultralytics/yolov5.git
