@@ -1,4 +1,0 @@
-#| label: requirements.txt
-#| filename: requirements.txt
-#| code-line-numbers: false
-
