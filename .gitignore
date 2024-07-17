@@ -6,6 +6,8 @@ data/
 *.pt
 *.pth
 
+# Zip FIles
+*.zip
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
