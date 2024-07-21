@@ -1,11 +1,19 @@
 import os
 import random
 
+import yaml
+
 random.seed(42)
+import logging
 import shutil
 from pathlib import Path
 
+import ruamel.yaml
 from loguru import logger
+
+# Set up logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
 ############
 # variables
@@ -410,3 +418,277 @@ def partition_dataset_by_size(original_dataset_path:str, size:int, test_set_val_
 
     logger.info("Dataset partitioning complete")
     return dataset
+
+
+def replace_category(input_file, replacement_dict):
+    """
+    Replace values in the first column of a space-separated file based on a replacement dictionary.
+    The new file will be created in the original directory, and the old file will be moved to a new 'old_' directory.
+
+    Args:
+        input_file (str or Path): Path to the input file.
+        replacement_dict (dict): Dictionary mapping old values to new values.
+
+    Returns:
+        tuple: A tuple containing two integers - number of lines modified and total lines processed.
+    """
+    lines_modified = 0
+    total_lines = 0
+    
+    # Convert to Path object if it's not already
+    input_file = Path(input_file)
+    
+    # Get the directory and filename
+    input_dir = input_file.parent
+    filename = input_file.name
+    old_dir = input_dir.parent / f"old_{input_dir.name}"
+    
+    # Create the 'old_' directory if it doesn't exist
+    old_dir.mkdir(parents=True, exist_ok=True)
+    
+    # Define paths for the new file and the old file
+    new_file = input_file
+    old_file = old_dir / filename
+    temp_file = new_file.with_suffix(new_file.suffix + '.temp')
+    
+    # logger.info(f"Starting to process file: {input_file}")
+    # logger.info(f"New file will be created at: {new_file}")
+    # logger.info(f"Original file will be moved to: {old_file}")
+    
+    try:
+        with input_file.open('r') as infile, temp_file.open('w') as outfile:
+            for line in infile:
+                total_lines += 1
+                columns = line.strip().split()
+                if columns:
+                    original_value = columns[0]
+                    # Replace the first column if it's in the replacement dictionary
+                    new_value = replacement_dict.get(original_value, original_value)
+                    columns[0] = new_value
+                    
+                    if new_value != original_value:
+                        lines_modified += 1
+                        logger.info(f"Line {total_lines}: Replaced '{original_value}' with '{new_value}'")
+                    else:
+                        # logger.debug(f"Line {total_lines}: No replacement for '{original_value}'")
+                        pass
+                # Write the modified (or original) line to the output file
+                outfile.write(' '.join(columns) + '\n')
+        
+        # Move the original file to the 'old_' directory
+        shutil.move(str(input_file), str(old_file))
+        
+        # Rename the temporary file to the original filename
+        temp_file.rename(new_file)
+        
+        # logger.info(f"Finished processing file: {input_file}")
+        # logger.info(f"Total lines processed: {total_lines}")
+        # logger.info(f"Lines modified: {lines_modified}")
+        # logger.info(f"Original file moved to: {old_file}")
+        # logger.info(f"New file created at: {new_file}")
+        
+        return lines_modified, total_lines
+    
+    except IOError as e:
+        logger.error(f"Error processing file {input_file}: {str(e)}")
+        raise
+
+
+def modify_yaml_and_map_positions(yaml_file: str, remove_dict: dict) -> dict:
+    """
+    Modify the YAML file by removing elements that are keys in the provided dictionary,
+    and create a mapping of old positions to new positions.
+
+    Args:
+        yaml_file (str): Path to the YAML file.
+        remove_dict (dict): Dictionary whose keys will be removed from the YAML file.
+
+    Returns:
+        dict: A dictionary mapping old positions to new positions.
+    """
+    logger.info(f"Starting to process YAML file: {yaml_file}")
+
+    try:
+        # Read the YAML file
+        with open(yaml_file, 'r') as file:
+            data = yaml.safe_load(file)
+
+        if 'names' not in data:
+            raise KeyError("'names' key not found in the YAML file")
+
+        original_names = data['names']
+        logger.info(f"Original names: {original_names}")
+
+        # Remove elements that are keys in remove_dict
+        new_names = [name for name in original_names if name not in remove_dict]
+        logger.info(f"New names after removal: {new_names}")
+
+        # Create mapping of old positions to new positions
+        position_map = {}
+        for old_pos, name in enumerate(original_names):
+            if name in new_names:
+                new_pos = new_names.index(name)
+                position_map[old_pos] = new_pos
+                logger.info(f"Mapped: {name} from position {old_pos} to {new_pos}")
+            else:
+                logger.info(f"Removed: {name} from position {old_pos}")
+
+        # Update the YAML file
+        # data['names'] = new_names
+        # with open(yaml_file, 'w') as file:
+        #     yaml.dump(data, file)
+
+        logger.info(f"Updated YAML file with new names")
+        logger.info(f"Position mapping: {position_map}")
+
+        position_map = {str(key):str(value) for key,value in position_map.items()}
+
+        return position_map
+
+    except Exception as e:
+        logger.error(f"An error occurred while processing {yaml_file}: {str(e)}")
+        raise
+
+
+def modify_yaml_and_merge_labels(yaml_file: str, remove_dict: dict) -> dict:
+    """
+    Modify the YAML file by removing elements that are keys in the provided dictionary,
+    preserve the file format, and create a mapping of old positions to new positions.
+
+    Args:
+        yaml_file (str): Path to the YAML file.
+        remove_dict (dict): Dictionary whose keys will be removed from the YAML file.
+
+    Returns:
+        dict: A dictionary mapping old positions to new positions.
+    """
+    logger.info(f"Starting to process YAML file: {yaml_file}")
+
+    try:
+        # Initialize ruamel.yaml
+        yaml = ruamel.yaml.YAML()
+        yaml.preserve_quotes = True
+        yaml.indent(mapping=2, sequence=4, offset=2)
+
+        # Read the YAML file
+        with open(yaml_file, 'r') as file:
+            data = yaml.load(file)
+
+        if 'names' not in data:
+            raise KeyError("'names' key not found in the YAML file")
+
+        original_names = data['names']
+        logger.info(f"Original names: {original_names}")
+
+        # Remove elements that are keys in remove_dict
+        new_names = [name for name in original_names if name not in remove_dict]
+        logger.info(f"New names after removal: {new_names}")
+
+        # Create mapping of old positions to new positions
+        position_map = {}
+        for old_pos, name in enumerate(original_names):
+            if name in new_names:
+                new_pos = new_names.index(name)
+                position_map[old_pos] = new_pos
+                logger.info(f"Mapped: {name} from position {old_pos} to {new_pos}")
+            else:
+                logger.info(f"Removed: {name} from position {old_pos}")
+
+        # Update the YAML file
+        data['names'] = new_names
+        data['nc'] = len(new_names)  # Update the number of classes
+
+        with open(yaml_file, 'w') as file:
+            yaml.dump(data, file)
+
+        logger.info(f"Updated YAML file with new names")
+
+        position_map_swapped_str = {str(key):str(value) for key,value in position_map.items()}
+        logger.info(f"Position mapping: {position_map_swapped_str}")
+
+        return position_map_swapped_str
+
+
+    except Exception as e:
+        logger.error(f"An error occurred while processing {yaml_file}: {str(e)}")
+        raise
+
+
+import logging
+import os
+from typing import Dict
+
+import ruamel.yaml
+
+
+def map_yaml_positions_and_add_new_labels(
+    original_file: str, destination_file: str, new_file_name: str = "merged.yaml"
+) -> dict:
+    """
+    Maps positions between two YAML files of a specific shape, merges unique new elements
+    from destination to original while maintaining alphabetical order,
+    and creates a new YAML file with the merged results.
+
+    Args:
+        original_file (str): Path to the original YAML file.
+        destination_file (str): Path to the destination YAML file.
+        new_file_name (str, optional): Name for the new merged YAML file. Defaults to "merged.yaml".
+
+    Returns:
+        dict: A dictionary mapping original positions to destination positions (or -1 for added elements).
+    """
+    logger = logging.getLogger(__name__)
+    logger.info(f"Processing YAML files: {original_file}, {destination_file}")
+
+    try:
+        yaml = ruamel.yaml.YAML()
+        yaml.preserve_quotes = True
+
+        # Load YAML files
+        with open(original_file, "r") as f_orig, open(destination_file, "r") as f_dest:
+            original_data = yaml.load(f_orig)
+            print(original_data)
+            destination_data = yaml.load(f_dest)
+            print(destination_data)
+
+        # Extract and validate names
+        original_names = original_data.get("names", [])
+        destination_names = destination_data.get("names", [])
+        if not isinstance(original_names, list) or not isinstance(destination_names, list):
+            raise ValueError("'names' key must be a list in both YAML files.")
+
+        # Combine, de-duplicate, and sort names alphabetically
+        merged_names = sorted(set(original_names + destination_names))
+
+        # Create position map
+        position_map = {}
+        for dest_idx, name in enumerate(destination_names):
+            try:
+                orig_idx = original_names.index(name)
+                position_map[orig_idx] = merged_names.index(name)  # Map to new position
+            except ValueError:
+                # Name not in original, so it's a new addition
+                position_map[dest_idx] = -1  # Indicate added element
+
+        # Update original data (for the new file)
+        new_data = original_data.copy()
+        new_data["names"] = merged_names
+        new_data["nc"] = len(merged_names)
+
+        # Create new file path in the same directory as the original
+        new_file_path = os.path.join(os.path.dirname(original_file), new_file_name)
+
+        # Write the merged data to the new file
+        with open(new_file_path, "w") as f_new:
+            yaml.dump(new_data, f_new)
+
+        logger.info(f"Created new YAML file: {new_file_path}")
+
+        position_map = {str(key):str(value) for key,value in position_map.items()}
+        logger.info(f"Position mapping: {position_map}")
+
+        return position_map
+
+    except (FileNotFoundError, KeyError, ValueError, ruamel.yaml.YAMLError) as e:
+        logger.error(f"Error processing YAML files: {e}")
+        raise

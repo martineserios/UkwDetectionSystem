@@ -36,6 +36,7 @@ boto3 = "^1.34.107"
 opencv-python = "4.8.0.74"
 twilio = "^9.0.5"
 loguru = "^0.7.2"
+ruamel-yaml = "^0.18.6"
 
 
 [tool.poetry.group.dev.dependencies]

@@ -23,6 +23,7 @@ RUN pip install -r yolov5/requirements.txt
 
 
 
+
 FROM yolo as training
 
 COPY train /opt/ml/code
@@ -45,5 +46,4 @@ ENV SAGEMAKER_SUBMIT_DIRECTORY /opt/ml/code
 # this environment variable is used by the SageMaker PyTorch container to determine our program entry point
 # for training and serving.
 # For more information: https://github.com/aws/sagemaker-pytorch-container
-# ENV SAGEMAKER_PROGRAM train
-ENV SAGEMAKER_PROGRAM train_temporal
+ENV SAGEMAKER_PROGRAM train
