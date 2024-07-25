@@ -6,5 +6,5 @@
    "NAME": "wildfire-detector-model",
    "IMG_SIZE": "640",
    "EPOCHS": "35",
-   "BATCH": "64"
+   "BATCH": "32"
 }

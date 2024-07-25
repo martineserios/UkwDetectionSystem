@@ -18,5 +18,5 @@ echo valid
 ls /opt/ml/input/data/training/valid/
 
 
-python /opt/ml/code/yolov5/train.py --weights yolov5m.pt --img 640 --epochs 35 --batch-size 32 --data /opt/ml/code/config/data.yaml --name wildfire-model
+python /opt/ml/code/yolov5/train.py --weights /opt/ml/input/data/training/best.pt --img 640 --epochs 35 --batch-size 32 --data /opt/ml/input/data/training/data.yaml --name wildfire-model
 cp -r /opt/ml/code/yolov5/runs/train/wildfire-model /opt/ml/model/

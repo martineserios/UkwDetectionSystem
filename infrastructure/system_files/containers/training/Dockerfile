@@ -22,8 +22,6 @@ RUN git clone https://github.com/ultralytics/yolov5
 RUN pip install -r yolov5/requirements.txt
 
 
-
-
 FROM yolo as training
 
 COPY train /opt/ml/code

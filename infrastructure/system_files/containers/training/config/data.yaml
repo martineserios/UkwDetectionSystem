@@ -2,14 +2,5 @@ test: /opt/ml/input/data/training/test/images
 train: /opt/ml/input/data/training/train/images
 val: /opt/ml/input/data/training/valid/images
 
-nc: 9
-names:
-  - 'Fire-D'
-  - 'Fire-N'
-  - 'Smoke-0'
-  - 'Smoke-1'
-  - 'Smoke-2'
-  - 'Smoke-3'
-  - 'Smoke-C1'
-  - 'Smoke-C2'
-  - 'Smoke-N'
+nc: 3
+names: ['Fire', 'Smoke-A', 'Smoke-B']

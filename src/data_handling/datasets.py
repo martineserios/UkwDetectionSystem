@@ -494,7 +494,7 @@ def replace_category(input_file, replacement_dict):
         raise
 
 
-def modify_yaml_and_map_positions(yaml_file: str, remove_dict: dict) -> dict:
+def modify_yaml_and_map_positions(yaml_file: str, remove_dict: dict, new_file_name: str = "merged.yaml") -> dict:
     """
     Modify the YAML file by removing elements that are keys in the provided dictionary,
     and create a mapping of old positions to new positions.
@@ -533,10 +533,10 @@ def modify_yaml_and_map_positions(yaml_file: str, remove_dict: dict) -> dict:
             else:
                 logger.info(f"Removed: {name} from position {old_pos}")
 
-        # Update the YAML file
-        # data['names'] = new_names
-        # with open(yaml_file, 'w') as file:
-        #     yaml.dump(data, file)
+        # Add new updated the YAML file
+        data['names'] = new_names
+        with open(new_file_name, 'w') as file:
+            yaml.dump(data, file)
 
         logger.info(f"Updated YAML file with new names")
         logger.info(f"Position mapping: {position_map}")
@@ -550,7 +550,7 @@ def modify_yaml_and_map_positions(yaml_file: str, remove_dict: dict) -> dict:
         raise
 
 
-def modify_yaml_and_merge_labels(yaml_file: str, remove_dict: dict) -> dict:
+def modify_yaml_and_merge_labels(yaml_file: str, remove_dict: dict, new_file_name: str = "merged.yaml") -> dict:
     """
     Modify the YAML file by removing elements that are keys in the provided dictionary,
     preserve the file format, and create a mapping of old positions to new positions.
@@ -598,7 +598,7 @@ def modify_yaml_and_merge_labels(yaml_file: str, remove_dict: dict) -> dict:
         data['names'] = new_names
         data['nc'] = len(new_names)  # Update the number of classes
 
-        with open(yaml_file, 'w') as file:
+        with open(new_file_name, 'w') as file:
             yaml.dump(data, file)
 
         logger.info(f"Updated YAML file with new names")
@@ -612,13 +612,6 @@ def modify_yaml_and_merge_labels(yaml_file: str, remove_dict: dict) -> dict:
     except Exception as e:
         logger.error(f"An error occurred while processing {yaml_file}: {str(e)}")
         raise
-
-
-import logging
-import os
-from typing import Dict
-
-import ruamel.yaml
 
 
 def map_yaml_positions_and_add_new_labels(
@@ -692,3 +685,22 @@ def map_yaml_positions_and_add_new_labels(
     except (FileNotFoundError, KeyError, ValueError, ruamel.yaml.YAMLError) as e:
         logger.error(f"Error processing YAML files: {e}")
         raise
+
+def get_labels_from_txt_files(dir, sets=SET_TYPES):
+    from collections import Counter
+
+    categories = []
+
+    for set in sets:
+        labels_dir = dir / set / 'labels'
+        for file_label in os.listdir(labels_dir):
+            with open(labels_dir / file_label) as f:
+                lines = f.read().splitlines()
+                categories += [lines]
+
+    '\n'.join([category[0] for category in categories if len(category) > 0])
+    # len(set())
+
+    len({i for i in list(map(lambda x: x.split(" ")[0], [category[0] for category in categories if len(category) > 0]))})
+
+    return {i for i in list(map(lambda x: x.split(" ")[0], [category[0] for category in categories if len(category) > 0]))}
